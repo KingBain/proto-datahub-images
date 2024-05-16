@@ -1,0 +1,26 @@
+name: PR Webhook Notification
+
+on:
+  pull_request:
+    branches:
+      - main
+    types: [opened]
+
+jobs:
+  notify-webhook:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Send webhook notification
+      env:
+        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
+        SECRET_HEADER: ${{ secrets.SECRET_HEADER }}
+      run: |
+        curl -X POST $WEBHOOK_URL \
+        -H "Content-Type: application/json" \
+        -H "Authorization: Bearer $SECRET_HEADER" \
+        -d '{
+              "source": "GitHub Actions",
+              "severity": "info",
+              "message": "A new pull request has been created on the main branch.",
+              "pull_request_url": "${{ github.event.pull_request.html_url }}"
+            }'
