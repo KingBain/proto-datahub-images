@@ -12,8 +12,8 @@ jobs:
     steps:
     - name: Send webhook notification
       env:
-        WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
-        SECRET_HEADER: ${{ secrets.SECRET_HEADER }}
+        WEBHOOK_URL: ${{ secrets.NOTIFICATIONURL }}
+        SECRET_HEADER: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
       run: |
         curl -X POST $WEBHOOK_URL \
         -H "Content-Type: application/json" \
