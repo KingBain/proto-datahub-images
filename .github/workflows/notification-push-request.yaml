@@ -17,7 +17,7 @@ jobs:
       run: |
         curl -X POST $WEBHOOK_URL \
         -H "Content-Type: application/json" \
-        -H "Authorization: Bearer $SECRET_HEADER" \
+        -H "X-Custom-Secret: $SECRET_HEADER" \
         -d '{
               "source": "GitHub Actions",
               "severity": "info",
