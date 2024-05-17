@@ -1,0 +1,27 @@
+name: PR Merge Notification
+
+on:
+  push:
+    branches:
+      - main
+
+jobs:
+  notify-webhook:
+    runs-on: ubuntu-latest
+    steps:
+    - name: Send webhook notification
+      env:
+        WEBHOOK_URL: ${{ secrets.NOTIFICATIONURL }}
+        SECRET_HEADER: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
+        AGENT: ${{ secrets.NOTIFICATIONURL_AGENT }}
+      run: |
+        curl -X POST $WEBHOOK_URL \
+        -H "Content-Type: application/json" \
+        -H "X-Custom-Secret: $SECRET_HEADER" \
+        -H "X-Custom-Agent: $AGENT" \
+        -d '{
+              "source": "GitHub Actions",
+              "severity": "info",
+              "message": "A change to the main branch has been successfully merged.",
+              "url": "${{ github.event.head_commit.url }}"
+            }'
