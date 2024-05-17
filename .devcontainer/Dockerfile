@@ -3,7 +3,7 @@
 # Licensed under the MIT License. See https://go.microsoft.com/fwlink/?linkid=2090316 for license information.
 #-------------------------------------------------------------------------------------------------------------
 
-FROM ubuntu:focal
+FROM cgr.dev/chainguard/az:latest
 
 COPY first-run-notice.txt /tmp/scripts/
 
