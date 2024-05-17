@@ -9,16 +9,6 @@
             "userUid": "1000",
             "userGid": "1000"
         },
-        "ghcr.io/devcontainers/features/dotnet:2": {
-            "version": "8.0",
-			// Temporarily pinning as the dotnet-install script is flakey (attempts to install bits of 7.0.19 of Runtime, but 7.0.18 of Core & Runtime)
-			// See https://github.com/devcontainers/images/actions/runs/9083566665/job/24962519615?pr=1065#step:3:6146
-            "dotnetRuntimeVersions": "7.0.18", 
-            "aspNetCoreRuntimeVersions": "7.0.18"
-        },
-        "ghcr.io/devcontainers/features/hugo:1": {
-            "version": "latest"
-        },
         "ghcr.io/devcontainers/features/node:1": {
             "version": "20",
             "additionalVersions": "18"
@@ -27,27 +17,14 @@
     "overrideFeatureInstallOrder": [
         "ghcr.io/devcontainers/features/common-utils",
         "ghcr.io/devcontainers/features/git",
-        "ghcr.io/devcontainers/features/dotnet",
-        "ghcr.io/devcontainers/features/hugo",
         "ghcr.io/devcontainers/features/node",
-        "./local-features/nvs",
-        "ghcr.io/devcontainers/features/conda",
-        "./local-features/patch-conda",
         "ghcr.io/devcontainers/features/python",
-        "./local-features/patch-python",
-        "./local-features/machine-learning-packages",
-        "ghcr.io/devcontainers/features/php",
-        "ghcr.io/devcontainers/features/ruby",
-        "ghcr.io/devcontainers/features/java",
         "ghcr.io/devcontainers/features/sshd",
         "ghcr.io/devcontainers/features/git-lfs",
         "ghcr.io/devcontainers/features/github-cli",
         "ghcr.io/devcontainers/features/docker-in-docker",
         "ghcr.io/devcontainers/features/kubectl-helm-minikube",
-        "ghcr.io/devcontainers/features/go",
-        "./local-features/jekyll",
-        "ghcr.io/devcontainers/features/oryx",
-        "./local-features/setup-user"
+        "ghcr.io/devcontainers/features/go"
     ],
     "remoteUser": "codespace",
     "containerUser": "codespace",
