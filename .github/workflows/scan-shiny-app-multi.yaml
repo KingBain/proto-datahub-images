@@ -33,7 +33,7 @@ jobs:
 
     - name: Run Trivy vulnerability scanner
       id: trivy-scan
-      uses: aquasecurity/trivy-action@master
+      uses: aquasecurity/trivy-action@207cd40078971bb7a078f8504c2061f908569449
       with:
         image-ref: 'my-app:latest'
         format: "sarif"
