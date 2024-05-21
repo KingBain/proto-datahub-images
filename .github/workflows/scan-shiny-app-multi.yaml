@@ -33,27 +33,16 @@ jobs:
 
     - name: Run Trivy vulnerability scanner
       id: trivy-scan
-      uses: aquasecurity/trivy-action@207cd40078971bb7a078f8504c2061f908569449
+      uses: aquasecurity/trivy-action@master
       with:
         image-ref: 'my-app:latest'
-        format: "sarif"
-        security-checks: "vuln"
-        timeout: "15m"
-        output: "trivy-results.sarif"
+        format: 'sarif'
+        output: 'trivy-results.sarif'
 
-    - name: Update sarif vulnerability locations
-      run: |
-        cat trivy-results.sarif | \
-          jq '.runs[].results[].locations[].physicalLocation.artifactLocation += {"uri": "./managed-containers/shiny-app","uriBaseId": "ROOTPATH"}' | \
-          jq '.runs[].results[].locations[].physicalLocation.region += {"startLine": 1,"startColumn": 1,"endLine": 1,"endColumn": 1}' > sarif.tmp
-        mv sarif.tmp trivy-results.sarif
-      shell: bash
-
-    - name: Upload trivy scan results to github security tab
-      uses: github/codeql-action/upload-sarif@4355270be187e1b672a7a1c7c7bae5afdc1ab94a # v3.24.10
+    - name: Upload Trivy scan results to GitHub Security tab
+      uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: "trivy-results.sarif"
-        token: ${{ secrets.GITHUB_TOKEN }}
+        sarif_file: 'trivy-results.sarif'
 
     - name: Send SRE webhook notification
       if: failure()
