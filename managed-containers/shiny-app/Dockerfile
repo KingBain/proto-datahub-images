@@ -1,14 +1,17 @@
-FROM rocker/shiny:4
+# Use the official Rocker Shiny image as the base image
+FROM rocker/shiny:latest
 
+# Remove the default index.html and sample apps
+RUN rm -fr /srv/shiny-server/*
 
-ENV BLOB_ACCOUNT_NAME BLOB_ACCOUNT_KEY BLOB_CONTAINER_NAME=datahub APP_FOLDER=shiny
+# Copy the Shiny app files to the server directory
+COPY ./scripts/ /srv/shiny-server/
 
-# Install Azure CLI for file download
-RUN apt update && apt install -y curl && curl -sL https://aka.ms/InstallAzureCLIDeb | sudo bash
+# Expose the port Shiny Server runs on
+EXPOSE 3838
 
-RUN R -e "install.packages(c('leaflet','sp','RgoogleMaps','AzureStor','AzureRMR'))"
-RUN mkdir -p /srv/shiny-server/sample
-COPY app.R /srv/shiny-server/sample
+# Switch to the 'docker' user
+USER shiny
 
-COPY entrypoint.sh /run
-ENTRYPOINT [ "/bin/bash", "/run/entrypoint.sh" ]
+# Start Shiny Server
+CMD ["/usr/bin/shiny-server"]
