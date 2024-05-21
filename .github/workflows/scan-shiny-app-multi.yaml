@@ -32,13 +32,30 @@ jobs:
         docker build -t my-app:latest ./managed-containers/shiny-app
 
     - name: Run Trivy vulnerability scanner
+      id: trivy-scan
       uses: aquasecurity/trivy-action@master
       with:
         image-ref: 'my-app:latest'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
+        format: 'table'
+        exit-code: '1'
+        ignore-unfixed: true
+        vuln-type: 'os,library'
+        severity: 'CRITICAL,HIGH'
 
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: github/codeql-action/upload-sarif@v2
-      with:
-        sarif_file: 'trivy-results.sarif'
+    - name: Send SRE webhook notification
+      if: failure()
+      env:
+        WEBHOOK_URL: ${{ secrets.NOTIFICATIONURL }}
+        SECRET_HEADER: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
+        AGENT: ${{ secrets.NOTIFICATIONURL_AGENT }}
+      run: |
+        curl -X POST $WEBHOOK_URL \
+        -H "Content-Type: application/json" \
+        -H "X-Custom-Secret: $SECRET_HEADER" \
+        -H "X-Custom-Agent: $AGENT" \
+        -d '{
+              "source": "GitHub Actions",
+              "severity": "critical",
+              "message": "Trivy scan detected vulnerabilities in the Docker image.",
+              "details": "${{ steps.trivy-scan.outputs.result }}"
+            }'
