@@ -1,42 +1,57 @@
 name: Build and Publish Docker Images
 
 on:
-  schedule:
-    - cron: '0 9 * * 1'  # Runs every Monday at 9 AM
   workflow_dispatch:  # Allows manual trigger
+
+env:
+  REGISTRY: ghcr.io
+  IMAGE_NAME: ${{ github.repository }}
 
 jobs:
   build-and-publish:
     runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      attestations: write
 
     steps:
-    - name: Checkout repository
-      uses: actions/checkout@v3
+      - name: Checkout repository
+        uses: actions/checkout@v4
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
-    - name: Log in to GitHub Container Registry
-      uses: docker/login-action@v2
-      with:
-        registry: ghcr.io
-        username: ${{ github.actor }}
-        password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Find all Dockerfiles
+        id: find_dockerfiles
+        run: |
+          find . -name 'Dockerfile' | sed 's|/Dockerfile||' > dockerfile_paths.txt
 
-    - name: Find all Dockerfiles
-      id: find_dockerfiles
-      run: |
-        find . -name 'Dockerfile' | sed 's|/Dockerfile||' > dockerfile_paths.txt
-      continue-on-error: true
+      - name: Build and push Docker images
+        run: |
+          while IFS= read -r path; do
+            owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
+            repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
+            image_name="${{ env.REGISTRY }}/$owner_lower/$repo_lower/$(basename $path | tr '[:upper:]' '[:lower:]')"
+            echo "Building and pushing $image_name"
+            docker buildx build --push --tag $image_name $path
+          done < dockerfile_paths.txt
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          
+      - name: Extract metadata (tags, labels) for Docker
+        id: meta
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
 
-    - name: Build and push Docker images
-      run: |
-        while IFS= read -r path; do
-          owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-          repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-          image_name="ghcr.io/$owner_lower/$repo_lower/$(basename $path | tr '[:upper:]' '[:lower:]')"
-          echo "Building and pushing $image_name"
-          docker buildx build --push --tag $image_name $path
-        done < dockerfile_paths.txt
-      env:
-        GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+      - name: Generate artifact attestation
+        uses: actions/attest-build-provenance@v1
+        with:
+          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          subject-digest: ${{ steps.push.outputs.digest }}
+          push-to-registry: true
