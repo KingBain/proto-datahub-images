@@ -3,6 +3,11 @@ name: Build and Publish Docker Images
 on:
   workflow_dispatch:  # Allows manual trigger
 
+permissions:
+   id-token: write
+   contents: read
+
+
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: ${{ github.repository }}
