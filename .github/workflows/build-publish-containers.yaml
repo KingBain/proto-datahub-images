@@ -70,7 +70,7 @@ jobs:
         id: push
         uses: docker/build-push-action@v5
         with:
-          context: ${{ matrix.image }}
+          context: "{{defaultContext}}:mysubdir"
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
