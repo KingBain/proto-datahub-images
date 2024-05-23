@@ -11,9 +11,9 @@ jobs:
   build-and-publish:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
-      packages: write
       id-token: write
+      packages: write
+      contents: read
       attestations: write
 
     steps:
@@ -33,6 +33,7 @@ jobs:
           find . -name 'Dockerfile' | sed 's|/Dockerfile||' > dockerfile_paths.txt
 
       - name: Build and push Docker images
+        id: build-and-push
         run: |
           while IFS= read -r path; do
             owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
@@ -54,5 +55,5 @@ jobs:
         uses: actions/attest-build-provenance@v1
         with:
           subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.push.outputs.digest }}
+          subject-digest: ${{ steps.build-and-push.outputs.digest }}
           push-to-registry: true
