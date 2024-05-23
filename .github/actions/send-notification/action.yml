@@ -23,7 +23,7 @@ runs:
   steps:
     - name: Send notification
       run: |
-        curl -X POST ${{ inputs.webhook_url }} \
+        curl -X POST "${{ inputs.webhook_url }}" \
         -H "Content-Type: application/json" \
         -H "X-Custom-Secret: ${{ inputs.secret_header }}" \
         -H "X-Custom-Agent: ${{ inputs.agent }}" \
