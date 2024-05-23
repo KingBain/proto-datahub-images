@@ -11,9 +11,9 @@ jobs:
     steps:
     - name: Checkout repository
       uses: actions/checkout@v2
-      
+
     - name: Send webhook notification
-      uses: ./.github/actions/send-notification
+      uses: .github/actions/send-notification
       with:
         webhook_url: ${{ secrets.NOTIFICATIONURL }}
         secret_header: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
