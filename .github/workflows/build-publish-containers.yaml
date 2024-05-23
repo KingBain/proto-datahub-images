@@ -4,8 +4,8 @@ on:
   workflow_dispatch:  # Allows manual trigger
 
 permissions:
-   id-token: write
-   contents: read
+  id-token: write
+  attestations: write
 
 
 env:
