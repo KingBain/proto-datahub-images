@@ -1,0 +1,36 @@
+name: 'Send Notification'
+description: 'Send a notification to the specified webhook'
+inputs:
+  webhook_url:
+    description: 'The URL of the webhook'
+    required: true
+  secret_header:
+    description: 'The secret header for the webhook'
+    required: true
+  agent:
+    description: 'The agent for the webhook'
+    required: true
+  message:
+    description: 'The message to be sent in the notification'
+    required: true
+  severity:
+    description: 'The severity level of the notification'
+    required: false
+    default: 'critical'
+
+runs:
+  using: 'composite'
+  steps:
+    - name: Send notification
+      run: |
+        curl -X POST ${{ inputs.webhook_url }} \
+        -H "Content-Type: application/json" \
+        -H "X-Custom-Secret: ${{ inputs.secret_header }}" \
+        -H "X-Custom-Agent: ${{ inputs.agent }}" \
+        -d '{
+              "source": "GitHub Actions",
+              "severity": "${{ inputs.severity }}",
+              "message": "${{ inputs.message }}",
+              "details": "${{ github.event }}"
+            }'
+      shell: bash
