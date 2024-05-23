@@ -31,7 +31,8 @@ jobs:
         id: filter
         with:
           filters: |
-            managed_containers: 'managed-containers/**'
+            managed-containers/shiny-app: 'managed-containers/shiny-app/**'
+            managed-containers/shiny-fsdh-app: 'managed-containers/shiny-fsdh-app/**'
 
   build-push-and-deploy:
     if: needs.changes.outputs.images != '[]'

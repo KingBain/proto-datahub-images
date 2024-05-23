@@ -15,4 +15,3 @@ USER shiny
 
 # Start Shiny Server
 CMD ["/usr/bin/shiny-server"]
-
