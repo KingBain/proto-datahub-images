@@ -31,7 +31,7 @@ jobs:
     - name: Build and push Docker images
       run: |
         while IFS= read -r path; do
-          image_name="ghcr.io/${{ github.repository_owner }}/$(basename $path)"
+          image_name="ghcr.io/${{ github.repository_owner }}/$(basename $path | tr '[:upper:]' '[:lower:]')"
           echo "Building and pushing $image_name"
           docker buildx build --push --tag $image_name $path
         done < dockerfile_paths.txt
