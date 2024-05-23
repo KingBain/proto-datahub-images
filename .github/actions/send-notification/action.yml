@@ -21,6 +21,13 @@ inputs:
 runs:
   using: 'composite'
   steps:
+    - name: Echo input variables
+      run: |
+        echo "Webhook URL: ${{ inputs.webhook_url }}"
+        echo "Message: ${{ inputs.message }}"
+        echo "Severity: ${{ inputs.severity }}"
+      shell: bash
+
     - name: Send notification
       run: |
         curl -X POST ${{ inputs.webhook_url }} \
