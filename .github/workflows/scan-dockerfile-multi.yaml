@@ -1,4 +1,4 @@
-name: Build and Scan Docker Image
+name: Security Scan Dockerfiles
 
 # This workflow triggers on workflow dispatch, pull request changes in specified paths, and a scheduled cron job
 on:
