@@ -1,6 +1,9 @@
 name: 'Send Notification'
 description: 'Send a notification to the specified webhook'
 inputs:
+  notification_source:
+    description: 'The source sending the event'
+    required: true
   webhook_url:
     description: 'The URL of the webhook'
     required: true
@@ -12,6 +15,9 @@ inputs:
     required: true
   message:
     description: 'The message to be sent in the notification'
+    required: true
+  more_url:
+    description: 'The followup URL for more information'
     required: true
   severity:
     description: 'The severity level of the notification'
@@ -28,9 +34,9 @@ runs:
         -H "X-Custom-Secret: ${{ inputs.secret_header }}" \
         -H "X-Custom-Agent: ${{ inputs.agent }}" \
         -d '{
-              "source": "GitHub Actions",
+              "source": "${{ inputs.notification_source }}",
               "severity": "${{ inputs.severity }}",
               "message": "${{ inputs.message }}",
-              "details": "${{ github.event }}"
+              "url": "${{ inputs.more_url }}"
             }'
       shell: bash

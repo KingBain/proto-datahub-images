@@ -1,5 +1,6 @@
 name: PR Webhook Notification
 
+# This workflow triggers when a pull request is opened on the main branch
 on:
   pull_request:
     branches:
@@ -9,15 +10,27 @@ on:
 jobs:
   notify-webhook:
     runs-on: ubuntu-latest
+
     steps:
+    # Step 1: Checkout the repository to the GitHub runner
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Step 2: Send a notification to a webhook using the custom composite action
     - name: Send webhook notification
       uses: ./.github/actions/send-notification
       with:
+        # URL of the webhook where the notification will be sent
         webhook_url: ${{ secrets.NOTIFICATIONURL }}
+        # Secret header for authentication with the webhook
         secret_header: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
+        # Agent information for the webhook
         agent: ${{ secrets.NOTIFICATIONURL_AGENT }}
+        # The message to be sent in the notification
         message: 'A new pull request has been created on the main branch.'
+        # Severity level of the notification (optional, defaults to 'critical')
         severity: 'info'
+        # Source sending the event
+        notification_source: 'GitHub Actions'
+        # Follow-up URL for more information, dynamically set to the pull request URL
+        more_url: ${{ github.event.pull_request.html_url }}
