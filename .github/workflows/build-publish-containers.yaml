@@ -1,59 +1,81 @@
-name: Build and Publish Docker Images
+name: Build and Push Container to GHCR
 
 on:
-  workflow_dispatch:  # Allows manual trigger
+  workflow_dispatch:
+  push:
+    branches: [main]
 
 env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
+  GITHUB_SHA: ${{ github.sha }}
+  REGISTRY: ghcr.io/${{ github.repository }}
+
+permissions:
+  id-token: write
+  contents: write
+  pull-requests: write
+  actions: write
+  checks: write
+  statuses: write
+  security-events: write
 
 jobs:
-  build-and-publish:
+  changes:
     runs-on: ubuntu-latest
-    permissions:
-      id-token: write
-      packages: write
-      contents: read
-      attestations: write
+    outputs:
+      images: ${{ steps.filter.outputs.changes }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
+
+      - uses: dorny/paths-filter@v2.12.0
+        id: filter
+        with:
+          filters: |
+            managed_containers: 'managed-containers/**'
+
+  build-push-and-deploy:
+    if: needs.changes.outputs.images != '[]'
+    runs-on: ubuntu-latest
+    needs: changes
+    strategy:
+      fail-fast: false
+      matrix:
+        image: ${{ fromJSON(needs.changes.outputs.images) }}
 
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@v4
+      - name: Checkout
+        uses: actions/checkout@v4.1.1
 
-      - name: Log in to the Container registry
-        uses: docker/login-action@v2
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Login to GHCR
+        run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
-      - name: Find all Dockerfiles
-        id: find_dockerfiles
+      - name: Build container
+        working-directory: ./images/${{ matrix.image }}
         run: |
-          find . -name 'Dockerfile' | sed 's|/Dockerfile||' > dockerfile_paths.txt
+          docker build \
+          --build-arg git_sha=$GITHUB_SHA \
+          -t $REGISTRY/${{ matrix.image }}:$GITHUB_SHA \
+          -t $REGISTRY/${{ matrix.image }}:latest .
 
-      - name: Build and push Docker images
-        id: build-and-push
+      - name: Push containers to GHCR
         run: |
-          while IFS= read -r path; do
-            owner_lower=$(echo "${{ github.repository_owner }}" | tr '[:upper:]' '[:lower:]')
-            repo_lower=$(echo "${{ github.repository }}" | tr '[:upper:]' '[:lower:]')
-            image_name="${{ env.REGISTRY }}/$owner_lower/$repo_lower/$(basename $path | tr '[:upper:]' '[:lower:]')"
-            echo "Building and pushing $image_name"
-            docker buildx build --push --tag $image_name $path
-          done < dockerfile_paths.txt
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          
-      - name: Extract metadata (tags, labels) for Docker
-        id: meta
-        uses: docker/metadata-action@v4
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          docker push $REGISTRY/${{ matrix.image }}:$GITHUB_SHA
+          docker push $REGISTRY/${{ matrix.image }}:latest
 
-      - name: Generate artifact attestation
-        uses: actions/attest-build-provenance@v1
+      - name: Generate ${{ matrix.image }} docker SBOM
+        uses: cds-snc/security-tools/.github/actions/generate-sbom@v3.1.0
         with:
-          subject-name: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          subject-digest: ${{ steps.build-and-push.outputs.digest }}
-          push-to-registry: true
+          docker_image: ${{ env.REGISTRY }}/${{ matrix.image }}:${{ env.GITHUB_SHA }}
+          sbom_name: ${{ matrix.image }}
+          dockerfile_path: "${{ matrix.image }}/Dockerfile"
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Logout of GHCR
+        run: docker logout ghcr.io
+
+      - name: Deploy lambda
+        if: matrix.image == 'csp_violation_report_service'
+        run: |
+          aws lambda update-function-code \
+            --function-name "${{ matrix.image }}" \
+            --image-uri $REGISTRY/${{ matrix.image }}:$GITHUB_SHA > /dev/null 2>&1
