@@ -11,7 +11,6 @@ on:
 permissions:
   contents: read
 
-
 jobs:
   build-and-scan:
     runs-on: ubuntu-20.04
@@ -55,19 +54,9 @@ jobs:
         sarif_file: 'trivy-results.sarif'
 
     - name: Send SRE webhook notification
-      if: failure()
-      env:
-        WEBHOOK_URL: ${{ secrets.NOTIFICATIONURL }}
-        SECRET_HEADER: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
-        AGENT: ${{ secrets.NOTIFICATIONURL_AGENT }}
-      run: |
-        curl -X POST $WEBHOOK_URL \
-        -H "Content-Type: application/json" \
-        -H "X-Custom-Secret: $SECRET_HEADER" \
-        -H "X-Custom-Agent: $AGENT" \
-        -d '{
-              "source": "GitHub Actions",
-              "severity": "critical",
-              "message": "Trivy scan detected vulnerabilities in the Docker image.",
-              "details": "${{ steps.trivy-scan.outputs.result }}"
-            }'
+      uses: ./.github/actions/send-notification
+      with:
+        webhook_url: ${{ secrets.NOTIFICATIONURL }}
+        secret_header: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
+        agent: ${{ secrets.NOTIFICATIONURL_AGENT }}
+        message: 'Trivy scan has run.'
