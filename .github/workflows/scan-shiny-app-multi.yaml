@@ -1,5 +1,6 @@
 name: Build and Scan Docker Image
 
+# This workflow triggers on workflow dispatch, pull request changes in specified paths, and a scheduled cron job
 on:
   workflow_dispatch:
   pull_request:
@@ -20,12 +21,15 @@ jobs:
       actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
 
     steps:
+    # Step 1: Checkout the repository to the GitHub runner
     - name: Checkout repository
       uses: actions/checkout@v4
 
+    # Step 2: Set up Docker Buildx
     - name: Set up Docker Buildx
       uses: docker/setup-buildx-action@v2
 
+    # Step 3: Cache Docker layers to speed up the build process
     - name: Cache Docker layers
       uses: actions/cache@v3
       with:
@@ -34,10 +38,12 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
 
+    # Step 4: Build the Docker image for the application
     - name: Build Docker image
       run: |
         docker build -t my-app:latest ./managed-containers/shiny-app
 
+    # Step 5: Run Trivy vulnerability scanner on the built Docker image
     - name: Run Trivy vulnerability scanner
       id: trivy-scan
       uses: aquasecurity/trivy-action@master
@@ -48,15 +54,25 @@ jobs:
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
 
+    # Step 6: Upload the Trivy scan results to GitHub Security tab
     - name: Upload Trivy scan results to GitHub Security tab
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
 
+    # Step 7: Send SRE webhook notification
     - name: Send SRE webhook notification
       uses: ./.github/actions/send-notification
       with:
+        # URL of the webhook where the notification will be sent
         webhook_url: ${{ secrets.NOTIFICATIONURL }}
+        # Secret header for authentication with the webhook
         secret_header: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
+        # Agent information for the webhook
         agent: ${{ secrets.NOTIFICATIONURL_AGENT }}
+        # The message to be sent in the notification
         message: 'Trivy scan has run.'
+        # Source sending the event
+        notification_source: 'GitHub Actions'
+        # Follow-up URL for more information, dynamically set to the security report URL
+        more_url: ${{ github.server_url }}/${{ github.repository }}/security/code-scanning
