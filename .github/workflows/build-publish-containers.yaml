@@ -52,7 +52,7 @@ jobs:
         run: echo "${{ secrets.GITHUB_TOKEN }}" | docker login ghcr.io -u ${{ github.actor }} --password-stdin
 
       - name: Build container
-        working-directory: ./images/${{ matrix.image }}
+        working-directory: ./${{ matrix.image }}
         run: |
           docker build \
           --build-arg git_sha=$GITHUB_SHA \
