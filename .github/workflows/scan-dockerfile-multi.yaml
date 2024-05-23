@@ -1,11 +1,11 @@
-name: Build and Scan Docker Image
+name: Security Scan Dockerfiles
 
 # This workflow triggers on workflow dispatch, pull request changes in specified paths, and a scheduled cron job
 on:
   workflow_dispatch:
   pull_request:
     paths:
-      - 'managed-containers/shiny-app/**'
+      - 'managed-containers/**/Dockerfile'
   schedule:
     - cron: '0 9 * * MON'
 
@@ -38,13 +38,15 @@ jobs:
         restore-keys: |
           ${{ runner.os }}-buildx-
 
-    # Step 4: Build the Docker image for the application
+    # Step 4: Build the Docker image for the application, if the Dockerfile exists
     - name: Build Docker image
+      if: "hashFiles('managed-containers/**/Dockerfile') != ''"
       run: |
         docker build -t my-app:latest ./managed-containers/shiny-app
 
-    # Step 5: Run Trivy vulnerability scanner on the built Docker image
+    # Step 5: Run Trivy vulnerability scanner on the built Docker image, if the previous step succeeded
     - name: Run Trivy vulnerability scanner
+      if: steps.build.outputs.success == 'true'
       id: trivy-scan
       uses: aquasecurity/trivy-action@master
       with:
@@ -54,14 +56,16 @@ jobs:
         vuln-type: 'os,library'
         severity: 'CRITICAL,HIGH'
 
-    # Step 6: Upload the Trivy scan results to GitHub Security tab
+    # Step 6: Upload the Trivy scan results to GitHub Security tab, if the previous step succeeded
     - name: Upload Trivy scan results to GitHub Security tab
+      if: steps.trivy-scan.outputs.success == 'true'
       uses: github/codeql-action/upload-sarif@v3
       with:
         sarif_file: 'trivy-results.sarif'
 
-    # Step 7: Send SRE webhook notification
+    # Step 7: Send SRE webhook notification, if the previous step succeeded
     - name: Send SRE webhook notification
+      if: steps.trivy-scan.outputs.success == 'true'
       uses: ./.github/actions/send-notification
       with:
         # URL of the webhook where the notification will be sent
