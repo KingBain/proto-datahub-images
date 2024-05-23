@@ -10,6 +10,9 @@ jobs:
   notify-webhook:
     runs-on: ubuntu-latest
     steps:
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
     - name: Send webhook notification
       uses: ./.github/actions/send-notification
       with:
