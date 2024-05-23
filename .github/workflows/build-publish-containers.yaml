@@ -27,12 +27,13 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4.1.1
 
-      - uses: dorny/paths-filter@v2.12.0
+      - uses: dorny/paths-filter@v2
         id: filter
         with:
           filters: |
-            managed-containers/shiny-app: 'managed-containers/shiny-app/**'
-            managed-containers/shiny-fsdh-app: 'managed-containers/shiny-fsdh-app/**'
+            managed-containers: 
+              - 'managed-containers/**'
+
 
   build-push-and-deploy:
     if: needs.changes.outputs.images != '[]'
