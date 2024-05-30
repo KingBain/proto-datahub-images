@@ -51,21 +51,4 @@ jobs:
 
             # Clean up dangling images to free up space
             docker image prune -f
-
-            # Associate the README with the Docker image
-            if [ -f "$dockerfile_dir/README.md" ]; then
-              readme_path="$dockerfile_dir/README.md"
-            else
-              readme_path="./README.md"
-            fi
-
-            # Encode the README file to base64
-            readme_base64=$(base64 -w 0 $readme_path)
-
-            # Update the container description with the README
-            curl -X PATCH \
-              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
-              -H "Accept: application/vnd.github.v3+json" \
-              https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$image_name/versions/latest \
-              -d '{"description":"This is the README for the container image","readme":"'"$readme_base64"'"}'
           done
