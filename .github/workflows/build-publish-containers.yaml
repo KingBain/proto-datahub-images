@@ -38,15 +38,33 @@ jobs:
             dockerfile_dir=$(dirname $dockerfile)
 
             # Generate a unique image name based on the directory name
-            image_name="ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir)"
-
+            base_name="ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir)"
+            
             # Convert the image name to lowercase
-            image_name=$(echo $image_name | tr '[:upper:]' '[:lower:]')
+            image_name=$(echo $base_name | tr '[:upper:]' '[:lower:]')
 
             # Build the Docker image
-            docker build -t $image_name $dockerfile_dir
+            docker build -t $image_name:latest $dockerfile_dir
 
-            # Push the Docker image to GitHub Container Registry
-            docker push $image_name
-          done
+            # Push the Docker image with the 'latest' tag to GitHub Container Registry
+            docker push $image_name:latest
 
+            # Clean up dangling images to free up space
+            docker image prune -f
+
+            # Associate the README with the Docker image
+            if [ -f "$dockerfile_dir/README.md" ]; then
+              readme_path="$dockerfile_dir/README.md"
+            else
+              readme_path="./README.md"
+            fi
+
+            # Encode the README file to base64
+            readme_base64=$(base64 -w 0 $readme_path)
+
+            # Update the container description with the README
+            curl -X PATCH \
+              -H "Authorization: Bearer ${{ secrets.GITHUB_TOKEN }}" \
+              -H "Accept: application/vnd.github.v3+json" \
+              https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$image_name/versions/latest \
+              -d '{"description":"This is the README for the container image","readme":"'"$readme_base64"'"}'
