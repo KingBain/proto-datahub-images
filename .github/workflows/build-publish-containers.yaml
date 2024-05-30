@@ -68,3 +68,4 @@ jobs:
               -H "Accept: application/vnd.github.v3+json" \
               https://api.github.com/orgs/${{ github.repository_owner }}/packages/container/$image_name/versions/latest \
               -d '{"description":"This is the README for the container image","readme":"'"$readme_base64"'"}'
+          done
