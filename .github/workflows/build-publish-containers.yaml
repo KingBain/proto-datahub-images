@@ -34,8 +34,8 @@ jobs:
             # Get the directory of the Dockerfile
             dockerfile_dir=$(dirname $dockerfile)
 
-            # Generate a unique image name based on the directory name
-            image_name="ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir)"
+            # Generate a unique image name based on the directory name and convert it to lowercase
+            image_name="ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir | tr '[:upper:]' '[:lower:]')"
 
             # Build the Docker image
             docker build -t $image_name $dockerfile_dir
