@@ -1,4 +1,4 @@
-name: Build and Push Docker Images to GHCR
+name: Cron - Build and Push Docker Images to GHCR
 
 on:
   workflow_dispatch:
