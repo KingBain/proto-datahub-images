@@ -93,6 +93,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           branch: update-image-info-${{ github.run_id }}
+          base: main
           title: "Update image info YAML files"
           body: "Automated update of image info YAML files"
           labels: |
