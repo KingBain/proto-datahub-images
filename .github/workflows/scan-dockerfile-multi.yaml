@@ -48,13 +48,6 @@ jobs:
           echo "No image-info.yaml files found."
         fi
     
-    # Step 4: Upload Trivy scan results to GitHub Security tab
-    - name: Upload Trivy scan results to GitHub Security tab
-      uses: actions/upload-artifact@v4
-      with:
-        name: Trivy Scan Results
-        path: ./*.sarif
-
     # Step 5: Upload SARIF file to GitHub Code Scanning
     - name: Upload SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v2
