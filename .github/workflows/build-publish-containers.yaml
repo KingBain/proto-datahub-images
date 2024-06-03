@@ -75,7 +75,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
-          git checkout -b update-image-info
+          git checkout -b update-image-info origin/main
           git add managed-containers/**/image-info.yaml
           git commit -m "Add generated YAML file with image details"
           git push origin update-image-info
@@ -86,8 +86,7 @@ jobs:
         id: create_pr
         run: |
           gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-          gh pr create --title "Update image-info.yaml with latest build details" --body "This PR updates the image-info.yaml files with the latest build details." --base main --head update-image-info
-          pr_number=$(gh pr list --head update-image-info --json number --jq '.[0].number')
+          gh pr create --title "Update image-info.yaml with latest build details" --body "This PR updates the image-info.yaml files with the latest build details." --base main --head update-image-info          pr_number=$(gh pr list --head update-image-info --json number --jq '.[0].number')
           echo "pr_number=${pr_number}" >> $GITHUB_ENV
 
       - name: Merge Pull Request
