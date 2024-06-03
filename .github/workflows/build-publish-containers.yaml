@@ -88,8 +88,9 @@ jobs:
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v6
-        branch: update-image-info-${{ github.run_id }}
-        delete-branch: false
-        title: Changes by create-pull-request action
-        body: Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
-        draft: false
+        with:
+          branch: update-image-info-${{ github.run_id }}
+          delete-branch: false
+          title: Changes by create-pull-request action
+          body: Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          draft: false
