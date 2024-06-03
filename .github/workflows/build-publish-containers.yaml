@@ -9,8 +9,9 @@ jobs:
   build-and-push:
     runs-on: ubuntu-latest
     permissions:
-      contents: read
+      contents: write
       packages: write
+      pull-requests: write
 
     steps:
       - name: Checkout repository
@@ -49,6 +50,48 @@ jobs:
             # Push the Docker image with the 'latest' tag to GitHub Container Registry
             docker push $image_name:latest
 
+            # Get the image digest
+            digest=$(docker inspect --format='{{index .RepoDigests 0}}' $image_name:latest)
+
+            # Get the current date
+            date=$(date -u +"%Y-%m-%dT%H:%M:%SZ")
+
+            # URL of the container image
+            image_url="https://ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir):latest"
+
+            # Generate YAML file
+            echo "---
+            image:
+              name: $image_name
+              digest: $digest
+              date: $date
+              url: $image_url" > $dockerfile_dir/image-info.yaml
+
             # Clean up dangling images to free up space
             docker image prune -f
           done
+
+      - name: Create a new branch
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git checkout -b update-image-info
+          git add managed-containers/**/image-info.yaml
+          git commit -m "Add generated YAML file with image details"
+          git push origin update-image-info
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Create Pull Request
+        id: create_pr
+        run: |
+          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
+          gh pr create --title "Update image-info.yaml with latest build details" --body "This PR updates the image-info.yaml files with the latest build details." --base main --head update-image-info
+          pr_number=$(gh pr list --head update-image-info --json number --jq '.[0].number')
+          echo "pr_number=${pr_number}" >> $GITHUB_ENV
+
+      - name: Merge Pull Request
+        run: |
+          gh pr merge ${{ env.pr_number }} --merge --admin --delete-branch
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
