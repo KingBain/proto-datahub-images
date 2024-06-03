@@ -17,41 +17,40 @@ jobs:
     steps:
     # Step 1: Checkout the repository to the GitHub runner
     - name: Checkout repository
-      uses: actions/checkout@v4
+      uses: actions/checkout@v5
 
-    # Step 2: Find all image-info.yaml files
-    - name: Find image-info.yaml files
-      id: find_yaml
-      run: |
-        echo "Finding image-info.yaml files..."
-        image_info_files=$(find ./managed-containers -name 'image-info.yaml')
-        echo "::set-output name=image_info_files::$image_info_files"
-    
-    # Step 3: Install Trivy
+    # Step 2: Install Trivy
     - name: Install Trivy
       run: |
         echo "Installing Trivy..."
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-    # Step 4: Parse image-info.yaml files and scan Docker images
-    - name: Scan Docker images
-      if: steps.find_yaml.outputs.image_info_files != ''
+    # Step 3: Find all image-info.yaml files and scan Docker images
+    - name: Find and Scan Docker images
+      id: find_and_scan
       run: |
-        echo "Parsing image-info.yaml files and scanning Docker images..."
-        for file in ${{ steps.find_yaml.outputs.image_info_files }}
-        do
-          url=$(yq e '.image.url' "$file")
-          if [ -n "$url" ]; then
-            # Remove the https:// prefix if present and convert to lowercase
-            image_name=$(echo ${url#https://} | tr '[:upper:]' '[:lower:]')
-            echo "Scanning $image_name..."
-            trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $image_name
-          fi
-        done
+        echo "Finding image-info.yaml files..."
+        image_info_files=$(find ./managed-containers -name 'image-info.yaml')
+
+        if [ -n "$image_info_files" ]; then
+          echo "Parsing image-info.yaml files and scanning Docker images..."
+          for file in $image_info_files
+          do
+            url=$(yq e '.image.url' "$file")
+            if [ -n "$url" ]; then
+              # Remove the https:// prefix if present and convert to lowercase
+              image_name=$(echo ${url#https://} | tr '[:upper:]' '[:lower:]')
+              echo "Scanning $image_name..."
+              trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $image_name
+            fi
+          done
+        else
+          echo "No image-info.yaml files found."
+        fi
     
-    # Step 5: Upload Trivy scan results to GitHub Security tab
+    # Step 4: Upload Trivy scan results to GitHub Security tab
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: actions/upload-artifact@v3
+      uses: actions/upload-artifact@v4
       with:
         name: Trivy Scan Results
         path: ./*.sarif
