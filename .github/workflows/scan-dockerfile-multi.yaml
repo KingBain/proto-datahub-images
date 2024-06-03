@@ -3,10 +3,6 @@ name: Security Scan Dockerfiles
 # This workflow triggers on workflow dispatch, pull request changes in specified paths, and a scheduled cron job
 on:
   workflow_dispatch:
-  pull_request:
-    paths:
-      - 'managed-containers/**/Dockerfile'
-      - 'managed-containers/**/image-info.yaml'
   schedule:
     - cron: '0 9 * * MON'
 
