@@ -6,6 +6,7 @@ on:
   pull_request:
     paths:
       - 'managed-containers/**/Dockerfile'
+      - 'managed-containers/**/image-info.yaml'
   schedule:
     - cron: '0 9 * * MON'
 
@@ -25,58 +26,30 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
 
-    # Step 2: Set up Docker Buildx
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v2
-
-    # Step 3: Cache Docker layers to speed up the build process
-    - name: Cache Docker layers
-      uses: actions/cache@v3
-      with:
-        path: /tmp/.buildx-cache
-        key: ${{ runner.os }}-buildx-${{ github.sha }}
-        restore-keys: |
-          ${{ runner.os }}-buildx-
-
-    # Step 4: Build the Docker image for the application, if the Dockerfile exists
-    - name: Build Docker image
-      if: "hashFiles('managed-containers/**/Dockerfile') != ''"
+    # Step 2: Find all image-info.yaml files
+    - name: Find image-info.yaml files
+      id: find_yaml
       run: |
-        docker build -t my-app:latest ./managed-containers/shiny-app
+        echo "::set-output name=image_info_files::$(find ./managed-containers -name 'image-info.yaml')"
 
-    # Step 5: Run Trivy vulnerability scanner on the built Docker image, if the previous step succeeded
-    - name: Run Trivy vulnerability scanner
-      if: steps.build.outputs.success == 'true'
-      id: trivy-scan
-      uses: aquasecurity/trivy-action@master
-      with:
-        image-ref: 'my-app:latest'
-        format: 'sarif'
-        output: 'trivy-results.sarif'
-        vuln-type: 'os,library'
-        severity: 'CRITICAL,HIGH'
+    # Step 3: Parse image-info.yaml files and scan Docker images
+    - name: Scan Docker images
+      if: steps.find_yaml.outputs.image_info_files != ''
+      run: |
+        for file in ${{ steps.find_yaml.outputs.image_info_files }}
+        do
+          url=$(yq e '.image.url' "$file")
+          if [ -n "$url" ]; then
+            echo "Scanning $url..."
+            trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $url
+          fi
+        done
 
-    # Step 6: Upload the Trivy scan results to GitHub Security tab, if the previous step succeeded
+    # Step 4: Upload Trivy scan results to GitHub Security tab
     - name: Upload Trivy scan results to GitHub Security tab
-      if: steps.trivy-scan.outputs.success == 'true'
-      uses: github/codeql-action/upload-sarif@v3
+      uses: actions/upload-artifact@v2
       with:
-        sarif_file: 'trivy-results.sarif'
+        name: Trivy Scan Results
+        path: ./*.sarif
 
-    # Step 7: Send SRE webhook notification, if the previous step succeeded
-    - name: Send SRE webhook notification
-      if: steps.trivy-scan.outputs.success == 'true'
-      uses: ./.github/actions/send-notification
-      with:
-        # URL of the webhook where the notification will be sent
-        webhook_url: ${{ secrets.NOTIFICATIONURL }}
-        # Secret header for authentication with the webhook
-        secret_header: ${{ secrets.NOTIFICATIONURL_SECRET_HEADER }}
-        # Agent information for the webhook
-        agent: ${{ secrets.NOTIFICATIONURL_AGENT }}
-        # The message to be sent in the notification
-        message: 'Trivy scan has run.'
-        # Source sending the event
-        notification_source: 'GitHub Actions'
-        # Follow-up URL for more information, dynamically set to the security report URL
-        more_url: ${{ github.server_url }}/${{ github.repository }}/security/code-scanning
+    # Optional: Additional steps if needed, such as notifying stakeholders
