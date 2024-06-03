@@ -89,13 +89,4 @@ jobs:
           git push origin update-image-info-${{ github.run_id }}
 
       - name: Create Pull Request
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update-image-info-${{ github.run_id }}
-          base: main
-          title: "Update image info YAML files"
-          body: "Automated update of image info YAML files"
-          labels: |
-            automated update
-          assignees: ${{ github.actor }}
+        uses: peter-evans/create-pull-request@v6
