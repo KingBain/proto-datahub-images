@@ -34,6 +34,7 @@ jobs:
 
         if [ -n "$image_info_files" ]; then
           echo "Parsing image-info.yaml files and scanning Docker images..."
+          mkdir -p trivy-results
           for file in $image_info_files
           do
             url=$(yq e '.image.url' "$file")
@@ -41,15 +42,22 @@ jobs:
               # Remove the https:// prefix if present and convert to lowercase
               image_name=$(echo ${url#https://} | tr '[:upper:]' '[:lower:]')
               echo "Scanning $image_name..."
-              trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $image_name
+              trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results/$(basename $file .yaml).sarif $image_name
             fi
           done
         else
           echo "No image-info.yaml files found."
         fi
-    
+
+    # Step 4: Upload Trivy scan results as artifacts
+    - name: Upload Trivy scan results as artifacts
+      uses: actions/upload-artifact@v4
+      with:
+        name: Trivy Scan Results
+        path: trivy-results/*.sarif
+
     # Step 5: Upload SARIF file to GitHub Code Scanning
     - name: Upload SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: ./*.sarif
+        sarif_file: trivy-results/*.sarif
