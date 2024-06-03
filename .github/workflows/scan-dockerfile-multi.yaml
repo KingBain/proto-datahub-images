@@ -42,8 +42,10 @@ jobs:
         do
           url=$(yq e '.image.url' "$file")
           if [ -n "$url" ]; then
-            echo "Scanning $url..."
-            trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $url
+            # Remove the https:// prefix if present
+            image_name=${url#https://}
+            echo "Scanning $image_name..."
+            trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $image_name
           fi
         done
     
