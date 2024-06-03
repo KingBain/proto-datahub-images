@@ -27,16 +27,19 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Create new branch
+        run: |
+          git checkout main
+          git pull
+          git checkout -b update-image-info-${{ github.run_id }}
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+
       - name: Find Dockerfiles and build/push images
         id: build_and_push
         run: |
           # Find all Dockerfiles under the managed-containers directory
           dockerfiles=$(find ./managed-containers -name 'Dockerfile')
-
-          # Create a new branch for the changes
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git checkout -b update-image-info
 
           # Iterate over each Dockerfile found
           for dockerfile in $dockerfiles; do
@@ -83,28 +86,15 @@ jobs:
           git commit -m "Update image info YAML files"
 
           # Push the branch to the remote repository
-          git push origin update-image-info
+          git push origin update-image-info-${{ github.run_id }}
 
       - name: Create Pull Request
         uses: peter-evans/create-pull-request@v5
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          branch: update-image-info
+          branch: update-image-info-${{ github.run_id }}
           title: "Update image info YAML files"
           body: "Automated update of image info YAML files"
           labels: |
             automated update
           assignees: ${{ github.actor }}
-
-      - name: Merge Pull Request
-        uses: actions/github-script@v6
-        with:
-          script: |
-            const { context, github } = require('@actions/github');
-            const prNumber = context.payload.pull_request.number;
-            await github.pulls.merge({
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              pull_number: prNumber,
-              merge_method: 'merge'
-            });
