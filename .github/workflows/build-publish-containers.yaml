@@ -75,6 +75,7 @@ jobs:
         run: |
           git config --local user.email "action@github.com"
           git config --local user.name "GitHub Action"
+          git fetch origin refs/heads/master:refs/remotes/origin/master
           git checkout -b update-image-info origin/main
           git add managed-containers/**/image-info.yaml
           git commit -m "Add generated YAML file with image details"
