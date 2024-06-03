@@ -85,6 +85,6 @@ jobs:
       - name: Auto-merge Pull Request
         if: steps.create-pr.outputs.pull-request-operation == 'created'
         run: |
-          gh pr merge main --squash --auto
+          gh pr merge update-image-info-${{ github.run_id }} --squash --auto
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
