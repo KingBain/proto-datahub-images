@@ -73,10 +73,19 @@ jobs:
 
 
       - name: Create Pull Request
+        id: create-pr
         uses: peter-evans/create-pull-request@v6
         with:
           branch: update-image-info-${{ github.run_id }}
-          delete-branch: false
+          delete-branch: true
           title: Changes by create-pull-request action
           body: Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
           draft: false
+
+      - name: Auto-merge Pull Request
+        if: steps.create-pr.outputs.pull-request-operation == 'created'
+        run: |
+          pr_number=$(jq --raw-output .number ${{ steps.create-pr.outputs.pull-request-url }})
+          gh pr merge $pr_number --auto --merge
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
