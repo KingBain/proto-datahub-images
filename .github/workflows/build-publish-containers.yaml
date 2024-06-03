@@ -33,6 +33,9 @@ jobs:
           # Find all Dockerfiles under the managed-containers directory
           dockerfiles=$(find ./managed-containers -name 'Dockerfile')
 
+          # Create a new branch for the changes
+          git checkout -b update-image-info
+
           # Iterate over each Dockerfile found
           for dockerfile in $dockerfiles; do
             # Get the directory of the Dockerfile
@@ -67,31 +70,39 @@ jobs:
               date: $date
               url: $image_url" > $dockerfile_dir/image-info.yaml
 
+            # Add the YAML file to the Git staging area
+            git add $dockerfile_dir/image-info.yaml
+
             # Clean up dangling images to free up space
             docker image prune -f
           done
 
-      - name: Create a new branch
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-          git checkout -b update-image-info
-          git add managed-containers/**/image-info.yaml
-          git commit -m "Add generated YAML file with image details"
+          # Commit the changes
+          git commit -m "Update image info YAML files"
+
+          # Push the branch to the remote repository
           git push origin update-image-info
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Create Pull Request
-        id: create_pr
-        run: |
-          gh auth login --with-token <<< "${{ secrets.GITHUB_TOKEN }}"
-          gh pr create --title "Update image-info.yaml with latest build details" --body "This PR updates the image-info.yaml files with the latest build details." --base main --head update-image-info
-          pr_number=$(gh pr list --head update-image-info --json number --jq '.[0].number')
-          echo "pr_number=${pr_number}" >> $GITHUB_ENV
+        uses: peter-evans/create-pull-request@v5
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          branch: update-image-info
+          title: "Update image info YAML files"
+          body: "Automated update of image info YAML files"
+          labels: |
+            automated update
+          assignees: ${{ github.actor }}
 
       - name: Merge Pull Request
-        run: |
-          gh pr merge ${{ env.pr_number }} --merge --admin --delete-branch
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        uses: actions/github-script@v6
+        with:
+          script: |
+            const { context, github } = require('@actions/github');
+            const prNumber = context.payload.pull_request.number;
+            await github.pulls.merge({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              pull_number: prNumber,
+              merge_method: 'merge'
+            });
