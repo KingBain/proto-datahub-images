@@ -38,12 +38,13 @@ jobs:
           
           for file in $image_info_files
           do
+            name=$(yq e '.image.name' "$file")
             url=$(yq e '.image.url' "$file")
             if [ -n "$url" ]; then
-              # Extract the container name and convert to lowercase
-              container_name=$(echo ${url##*/} | tr '[:upper:]' '[:lower:]')
-              echo "Scanning $container_name..."
-              trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results/${container_name}.sarif $url
+              # Remove the https:// prefix if present and convert to lowercase
+              image_name=$(echo ${url#https://} | tr '[:upper:]' '[:lower:]')
+              echo "Scanning $image_name..."
+              trivy image --severity CRITICAL,HIGH --format sarif --output "trivy-results/${name}.sarif" $image_name
             fi
           done
         else
