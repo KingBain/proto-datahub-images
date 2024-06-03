@@ -1,4 +1,4 @@
-name: Security Scan Dockerfiles
+name: Cron - Security Scan Container Registry
 
 # This workflow triggers on workflow dispatch, pull request changes in specified paths, and a scheduled cron job
 on:
@@ -54,5 +54,3 @@ jobs:
       with:
         name: Trivy Scan Results
         path: ./*.sarif
-
-    # Optional: Additional steps if needed, such as notifying stakeholders
