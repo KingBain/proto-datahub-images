@@ -24,6 +24,7 @@ jobs:
       run: |
         echo "Installing Trivy..."
         curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+        mkdir -p trivy-results
 
     # Step 3: Find all image-info.yaml files and scan Docker images
     - name: Find and Scan Docker images
@@ -34,7 +35,7 @@ jobs:
 
         if [ -n "$image_info_files" ]; then
           echo "Parsing image-info.yaml files and scanning Docker images..."
-          mkdir -p trivy-results
+          
           for file in $image_info_files
           do
             url=$(yq e '.image.url' "$file")
@@ -50,14 +51,14 @@ jobs:
         fi
 
     # Step 4: Upload Trivy scan results as artifacts
-    - name: Upload Trivy scan results as artifacts
-      uses: actions/upload-artifact@v4
-      with:
-        name: Trivy Scan Results
-        path: trivy-results/*.sarif
+    #- name: Upload Trivy scan results as artifacts
+    #  uses: actions/upload-artifact@v4
+    #  with:
+    #    name: Trivy Scan Results
+    #    path: trivy-results/*.sarif
 
     # Step 5: Upload SARIF file to GitHub Code Scanning
     - name: Upload SARIF to GitHub Code Scanning
       uses: github/codeql-action/upload-sarif@v2
       with:
-        sarif_file: trivy-results/*.sarif
+        sarif_file: trivy-results/
