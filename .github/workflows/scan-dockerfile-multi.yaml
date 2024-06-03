@@ -8,14 +8,11 @@ on:
 
 permissions:
   contents: read
+  security-events: write
 
 jobs:
   build-and-scan:
     runs-on: ubuntu-20.04
-    permissions:
-      contents: read # for actions/checkout to fetch code
-      security-events: write # for github/codeql-action/upload-sarif to upload SARIF results
-      actions: read # only required for a private repository by github/codeql-action/upload-sarif to get the Action run status
 
     steps:
     # Step 1: Checkout the repository to the GitHub runner
@@ -26,18 +23,21 @@ jobs:
     - name: Find image-info.yaml files
       id: find_yaml
       run: |
-        echo "::set-output name=image_info_files::$(find ./managed-containers -name 'image-info.yaml')"
-
+        echo "Finding image-info.yaml files..."
+        image_info_files=$(find ./managed-containers -name 'image-info.yaml')
+        echo "::set-output name=image_info_files::$image_info_files"
+    
+    # Step 3: Install Trivy
     - name: Install Trivy
-          run: |
-            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+      run: |
+        echo "Installing Trivy..."
+        curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
 
-
-
-    # Step 3: Parse image-info.yaml files and scan Docker images
+    # Step 4: Parse image-info.yaml files and scan Docker images
     - name: Scan Docker images
       if: steps.find_yaml.outputs.image_info_files != ''
       run: |
+        echo "Parsing image-info.yaml files and scanning Docker images..."
         for file in ${{ steps.find_yaml.outputs.image_info_files }}
         do
           url=$(yq e '.image.url' "$file")
@@ -46,10 +46,10 @@ jobs:
             trivy image --severity CRITICAL,HIGH --format sarif --output trivy-results-$(basename $file .yaml).sarif $url
           fi
         done
-
-    # Step 4: Upload Trivy scan results to GitHub Security tab
+    
+    # Step 5: Upload Trivy scan results to GitHub Security tab
     - name: Upload Trivy scan results to GitHub Security tab
-      uses: actions/upload-artifact@v2
+      uses: actions/upload-artifact@v3
       with:
         name: Trivy Scan Results
         path: ./*.sarif
