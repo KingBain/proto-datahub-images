@@ -85,7 +85,6 @@ jobs:
       - name: Auto-merge Pull Request
         if: steps.create-pr.outputs.pull-request-operation == 'created'
         run: |
-          pr_number=$(jq --raw-output .number ${{ steps.create-pr.outputs.pull-request-url }})
-          gh pr merge $pr_number --auto --merge
+          gh pr merge main --squash --auto
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
