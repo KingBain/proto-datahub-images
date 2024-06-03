@@ -79,7 +79,7 @@ jobs:
           branch: update-image-info-${{ github.run_id }}
           delete-branch: true
           title: Changes by create-pull-request action
-          body: Automated changes by [create-pull-request](https://github.com/peter-evans/create-pull-request) GitHub action
+          body: Automated Docker Image Maintenace via GitHub action
           draft: false
 
       - name: Auto-merge Pull Request
