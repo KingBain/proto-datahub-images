@@ -32,6 +32,12 @@ jobs:
       run: |
         echo "::set-output name=image_info_files::$(find ./managed-containers -name 'image-info.yaml')"
 
+    - name: Install Trivy
+          run: |
+            curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+
+
     # Step 3: Parse image-info.yaml files and scan Docker images
     - name: Scan Docker images
       if: steps.find_yaml.outputs.image_info_files != ''
