@@ -92,6 +92,7 @@ jobs:
 
       - name: Merge Pull Request
         run: |
+          git fetch --all
           gh pr merge ${{ env.pr_number }} --merge --admin --delete-branch
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
