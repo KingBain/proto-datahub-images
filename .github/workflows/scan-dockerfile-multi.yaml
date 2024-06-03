@@ -54,3 +54,9 @@ jobs:
       with:
         name: Trivy Scan Results
         path: ./*.sarif
+
+    # Step 5: Upload SARIF file to GitHub Code Scanning
+    - name: Upload SARIF to GitHub Code Scanning
+      uses: github/codeql-action/upload-sarif@v2
+      with:
+        sarif_file: ./*.sarif
