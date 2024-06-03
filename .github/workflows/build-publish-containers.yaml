@@ -59,13 +59,11 @@ jobs:
             image_url="https://ghcr.io/${{ github.repository_owner }}/$(basename $dockerfile_dir):latest"
 
             # Generate YAML file
-            cat <<EOT >> $dockerfile_dir/image-info.yaml
-            image:
-              name: $image_name
-              digest: $digest
-              date: $date
-              url: $image_url
-            EOT
+            echo "image:
+            name: $image_name
+            digest: $digest
+            date: $date
+            url: $image_url" > $dockerfile_dir/image-info.yaml
 
             # Clean up dangling images to free up space
             docker image prune -f
