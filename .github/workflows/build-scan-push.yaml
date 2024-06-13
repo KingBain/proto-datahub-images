@@ -51,7 +51,7 @@ jobs:
             docker build -t test:latest $dockerfile_dir
 
             # Scan local test:latest Docker image with Trivy
-            trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress --format json -o trivy-results/$(basename $dockerfile_dir)-trivy-report.json test:latest
+            trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress --format table test:latest 
             
             # Clean up dangling images to free up space
             docker image prune -f
