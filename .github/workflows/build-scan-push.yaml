@@ -33,7 +33,7 @@ jobs:
         id: build_and_scan
         run: |
           # Find all Dockerfiles that have been updated or created in the last commit
-          dockerfiles=$(git diff HEAD | grep 'Dockerfile' | grep -v '^D' | awk '{print $2}')
+          dockerfiles=$(git diff --name-only HEAD^..HEAD | grep 'Dockerfile' | grep -v '^D')
 
           # Exit if no Dockerfiles were found
           if [ -z "$dockerfiles" ]; then
