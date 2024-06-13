@@ -35,7 +35,7 @@ jobs:
         id: build_and_scan
         run: |
           # Find all Dockerfiles that have been updated or created in the last commit
-          dockerfiles=$(git diff --name-only HEAD^..HEAD | grep 'Dockerfile' | grep -v '^D')
+          dockerfiles=$(git diff --name-only HEAD^..HEAD | grep 'Dockerfile')
 
           # Exit if no Dockerfiles were found
           if [ -z "$dockerfiles" ]; then
@@ -44,6 +44,13 @@ jobs:
           fi
 
           for dockerfile in $dockerfiles; do
+            
+            # Check if the Dockerfile exists
+            if [ ! -f "$dockerfile" ]; then
+              echo "Dockerfile $dockerfile does not exist, skipping..."
+              continue
+            fi
+
             # Get the directory of the Dockerfile
             dockerfile_dir=$(dirname $dockerfile)
 
