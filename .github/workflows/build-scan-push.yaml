@@ -18,8 +18,7 @@ on:
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
-    permissions:
-    
+
     steps:
       # Step to check out the repository
       - name: Checkout repository
