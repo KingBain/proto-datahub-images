@@ -1,0 +1,56 @@
+name: Build and Scan Docker Images on Push
+
+on:
+  push:
+    branches:
+      - '**'  # Runs on push to any branch
+    paths:
+      - '**/Dockerfile'  # Only runs if a Dockerfile is created or updated
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      packages: write
+      pull-requests: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Install Trivy
+      - name: Install Trivy
+        run: |
+          echo "Installing Trivy..."
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          mkdir -p trivy-results
+
+      - name: Find and build updated Dockerfiles
+        id: build_and_scan
+        run: |
+          # Find all Dockerfiles that have been updated or created in the last commit
+          dockerfiles=$(git diff --name-status HEAD~1 HEAD | grep 'Dockerfile' | grep -v '^D' | awk '{print $2}')
+
+          # Exit if no Dockerfiles were found
+          if [ -z "$dockerfiles" ]; then
+            echo "No Dockerfiles created or updated."
+            exit 0
+          fi
+
+          for dockerfile in $dockerfiles; do
+            # Get the directory of the Dockerfile
+            dockerfile_dir=$(dirname $dockerfile)
+
+            # Build the Docker image
+            docker build -t test:latest $dockerfile_dir
+
+            # Scan local test:latest Docker image with Trivy
+            trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress --format json -o trivy-results/$(basename $dockerfile_dir)-trivy-report.json test:latest
+            
+            # Clean up dangling images to free up space
+            docker image prune -f
+          done
