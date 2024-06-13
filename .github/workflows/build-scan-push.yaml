@@ -19,10 +19,7 @@ jobs:
   build-and-scan:
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      packages: write
-      pull-requests: write
-
+    
     steps:
       # Step to check out the repository
       - name: Checkout repository
