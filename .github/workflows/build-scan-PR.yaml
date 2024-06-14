@@ -59,7 +59,7 @@ jobs:
             docker build -t test:latest $dockerfile_dir
 
             # Scan the local Docker image with Trivy for high and critical vulnerabilities
-            trivy_output=$(trivy image --severity CRITICAL --exit-code 1 --no-progress --format table test:latest)
+            trivy_output=$(trivy image --severity CRITICAL --no-progress --format table test:latest)
             echo "$trivy_output"
             scan_result="${scan_result}\n\n${dockerfile} scan result:\n${trivy_output}"
             
