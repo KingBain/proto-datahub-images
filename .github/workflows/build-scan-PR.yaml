@@ -1,0 +1,108 @@
+name: Build and Scan Docker Images on Pull Request
+
+on:
+  pull_request:
+    branches:
+      - main  # Replace 'main' with your default branch if different
+    paths:
+      - 'managed-containers/**/Dockerfile'  # Only runs if a Dockerfile is created or updated in managed-containers
+
+permissions:
+  id-token: write
+  contents: read
+  issues: write
+  pull-requests: write
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step to check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch the full commit history to ensure access to all commits
+
+      # Step to set up Docker Buildx for advanced build features
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step to install Trivy, a vulnerability scanner for Docker images
+      - name: Install Trivy
+        run: |
+          echo "Installing Trivy..."
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+
+      # Step to find and build updated Dockerfiles
+      - name: Find and build updated Dockerfiles
+        id: build_and_scan
+        run: |
+          # Find all Dockerfiles that have been updated or created in the last commit
+          dockerfiles=$(git diff --name-only HEAD^..HEAD | grep 'Dockerfile')
+
+          # Exit if no Dockerfiles were found
+          if [ -z "$dockerfiles" ]; then
+            echo "No Dockerfiles created or updated."
+            echo "::set-output name=scan_result::No Dockerfiles created or updated."
+            echo "::set-output name=scan_failed::false"
+            exit 0
+          fi
+
+          scan_result=""
+          scan_failed=false
+          # Loop through each Dockerfile found
+          for dockerfile in $dockerfiles; do
+            # Check if the Dockerfile exists
+            if [ ! -f "$dockerfile" ]; then
+              echo "Dockerfile $dockerfile does not exist, skipping..."
+              continue
+            fi
+
+            # Get the directory of the Dockerfile
+            dockerfile_dir=$(dirname $dockerfile)
+
+            # Build the Docker image
+            docker build -t test:latest $dockerfile_dir
+
+            # Scan the local Docker image with Trivy for high and critical vulnerabilities
+            trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format json test:latest)
+
+            # Check the Trivy output for CRITICAL vulnerabilities
+            critical_count=$(echo $trivy_output | jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
+
+            if [ "$critical_count" -gt 0 ]; then
+              echo "CRITICAL vulnerabilities found in $dockerfile!"
+              scan_result="$scan_result\nDockerfile: $dockerfile\nCRITICAL vulnerabilities found: $critical_count"
+              scan_failed=true
+            else
+              scan_result="$scan_result\nDockerfile: $dockerfile\nNo CRITICAL vulnerabilities found."
+            fi
+          done
+
+          echo "scan_result=$scan_result" >> $GITHUB_OUTPUT
+          echo "scan_failed=$scan_failed" >> $GITHUB_OUTPUT
+
+
+
+      # Step to post a comment on the pull request with the scan results
+      - name: Post scan results to PR
+        if: steps.build_and_scan.outputs.scan_failed == 'true'
+        uses: actions/github-script@v6
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `### Vulnerability Scan Results\n${{steps.build_and_scan.outputs.scan_result}}`
+            })
+
+
+      # Step to fail the action if scan_failed is true
+      - name: Fail action if scan failed
+        if: steps.build_and_scan.outputs.scan_failed == 'true'
+        run: |
+          echo "Scan failed due to CRITICAL vulnerabilities in one or more Dockerfiles."
+          exit 1

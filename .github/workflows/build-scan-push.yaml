@@ -1,0 +1,68 @@
+name: Build and Scan Docker Images on Push and Pull Request
+
+# Trigger the workflow on pull requests targeting the main or default branch,
+# but only if a Dockerfile in the 'managed-containers' directory or its subdirectories is created or updated.
+on:
+  push:
+    branches:
+      - '**'  # Runs on push to any branch
+    paths:
+      - 'managed-containers/**/Dockerfile'  # Only runs if a Dockerfile is created or updated in managed-containers
+
+
+
+jobs:
+  build-and-scan:
+    runs-on: ubuntu-latest
+
+    steps:
+      # Step to check out the repository
+      - name: Checkout repository
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch the full commit history to ensure access to all commits
+
+      # Step to set up Docker Buildx for advanced build features
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      # Step to install Trivy, a vulnerability scanner for Docker images
+      - name: Install Trivy
+        run: |
+          echo "Installing Trivy..."
+          curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
+          mkdir -p trivy-results  # Create a directory to store Trivy results
+
+      # Step to find and build updated Dockerfiles
+      - name: Find and build updated Dockerfiles
+        id: build_and_scan
+        run: |
+          # Find all Dockerfiles that have been updated or created in the last commit
+          dockerfiles=$(git diff --name-only HEAD^..HEAD | grep 'Dockerfile')
+
+          # Exit if no Dockerfiles were found
+          if [ -z "$dockerfiles" ]; then
+            echo "No Dockerfiles created or updated."
+            exit 0
+          fi
+
+          # Loop through each Dockerfile found
+          for dockerfile in $dockerfiles; do
+            # Check if the Dockerfile exists
+            if [ ! -f "$dockerfile" ]; then
+              echo "Dockerfile $dockerfile does not exist, skipping..."
+              continue
+            fi
+
+            # Get the directory of the Dockerfile
+            dockerfile_dir=$(dirname $dockerfile)
+
+            # Build the Docker image
+            docker build -t test:latest $dockerfile_dir
+
+            # Scan the local Docker image with Trivy for high and critical vulnerabilities
+            trivy image --severity HIGH,CRITICAL --exit-code 1 --no-progress --format table test:latest 
+            
+            # Clean up dangling images to free up space
+            docker image prune -f
+          done
