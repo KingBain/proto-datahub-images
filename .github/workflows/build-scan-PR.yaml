@@ -89,15 +89,17 @@ jobs:
       - name: Post scan result as PR comment
         uses: actions/github-script@v6
         with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
           script: |
-            const scanResult = "{{ steps.build_and_scan.outputs.scan_result }}";
+            const scanResult = process.env.SCAN_RESULT;
             github.rest.issues.createComment({
               issue_number: context.issue.number,
               owner: context.repo.owner,
               repo: context.repo.repo,
               body: `### Trivy Scan Results\n${scanResult}`
             });
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SCAN_RESULT: ${{ steps.build_and_scan.outputs.scan_result }}
 
 
       # Final step to fail the job if vulnerabilities were found
