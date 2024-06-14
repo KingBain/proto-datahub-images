@@ -86,7 +86,7 @@ jobs:
             docker image prune -f
           done
 
-          echo "scan_result=$scan_result" >> $GITHUB_OUTPUT
+          echo "scan_result=${scan_result}" >> $GITHUB_OUTPUT
           echo "::set-output name=scan_failed::${scan_failed}"
 
       # Step to post the scan result as a comment on the pull request
