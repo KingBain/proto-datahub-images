@@ -85,18 +85,6 @@ jobs:
 
 
 
-      - name: Delete previous comments
-        uses: actions/github-script@v6
-        with:
-          github-token: ${{ secrets.GITHUB_TOKEN }}
-          script: |
-            const { data: comments } = await github.issues.listComments({...context.repo, issue_number: context.issue.number});
-            const comment = comments.find(comment => comment.user.type === "Bot" && comment.body.indexOf("Terrform update available") > -1);
-            if (comment) {
-              await github.issues.deleteComment({...context.repo, comment_id: comment.id});
-            }
-
-
       # Step to post a comment on the pull request with the scan results
       - name: Post scan results to PR
         if: steps.build_and_scan.outputs.scan_failed == 'true'
