@@ -8,9 +8,12 @@ on:
       - 'managed-containers/**/Dockerfile'  # Only runs if a Dockerfile is created or updated in managed-containers
 
 permissions:
-  id-token: write # This is required for requesting the JWT
-  contents: write   # This is required to create/push to write comment
+  id-token: write
+  contents: read
   issues: write
+  pull-requests: write
+
+
 
 jobs:
   build-and-scan:
