@@ -69,19 +69,29 @@ jobs:
             trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format json test:latest)
 
             # Check the Trivy output for CRITICAL vulnerabilities
-            echo $trivy_output
             critical_count=$(echo $trivy_output | jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
 
             if [ "$critical_count" -gt 0 ]; then
-              echo "CRITICAL vulnerabilities found!"
-              echo "::set-output name=scan_result::CRITICAL vulnerabilities found."
-              echo "::set-output name=scan_failed::true"
-              exit 1
+              echo "CRITICAL vulnerabilities found in $dockerfile!"
+              scan_result="$scan_result\nDockerfile: $dockerfile\nCRITICAL vulnerabilities found: $critical_count"
+              scan_failed=true
+            else
+              scan_result="$scan_result\nDockerfile: $dockerfile\nNo CRITICAL vulnerabilities found."
             fi
-
-            # Append the scan result
-            scan_result="$scan_result\nDockerfile: $dockerfile\n$trivy_output"
           done
 
           echo "::set-output name=scan_result::$scan_result"
           echo "::set-output name=scan_failed::$scan_failed"
+
+      # Step to post a comment on the pull request with the scan results
+      - name: Post scan results to PR
+        if: steps.build-and-scan.outputs.scan_failed == 'true'
+        uses: actions/github-script@v6
+        with:
+          script: |
+            github.rest.issues.createComment({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              issue_number: context.issue.number,
+              body: `### Vulnerability Scan Results\n${steps.build-and-scan.outputs.scan_result}`
+            })
