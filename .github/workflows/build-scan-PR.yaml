@@ -86,7 +86,7 @@ jobs:
 
       # Step to post a comment on the pull request with the scan results
       - name: Post scan results to PR
-        if: steps.build-and-scan.outputs.scan_failed == 'true'
+        if: steps.build_and_scan.outputs.scan_failed == 'true'
         uses: actions/github-script@v6
         with:
           script: |
