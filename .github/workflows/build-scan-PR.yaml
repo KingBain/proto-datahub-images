@@ -85,8 +85,8 @@ jobs:
             # Clean up dangling images to free up space
             docker image prune -f
           done
-          
-          echo "::set-output name=scan_result::${scan_result}"
+
+          echo "{scan_result}=${scan_result}" >> $GITHUB_OUTPUT
           echo "::set-output name=scan_failed::${scan_failed}"
 
       # Step to post the scan result as a comment on the pull request
