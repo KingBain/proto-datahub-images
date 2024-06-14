@@ -70,7 +70,7 @@ jobs:
 
             # Check the Trivy output for CRITICAL vulnerabilities
             echo $trivy_output
-            critical_count=$(echo $trivy_output | jq '[.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL")] | length')
+            critical_count=$(echo $trivy_output | jq '[.Results[]? | .Vulnerabilities[]? | select(.Severity == "CRITICAL")] | length')
 
             if [ "$critical_count" -gt 0 ]; then
               echo "CRITICAL vulnerabilities found!"
