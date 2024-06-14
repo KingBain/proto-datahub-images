@@ -40,10 +40,12 @@ jobs:
           if [ -z "$dockerfiles" ]; then
             echo "No Dockerfiles created or updated."
             echo "::set-output name=scan_result::No Dockerfiles created or updated."
+            echo "::set-output name=scan_failed::false"
             exit 0
           fi
 
           scan_result=""
+          scan_failed=false
           # Loop through each Dockerfile found
           for dockerfile in $dockerfiles; do
             # Check if the Dockerfile exists
@@ -59,15 +61,21 @@ jobs:
             docker build -t test:latest $dockerfile_dir
 
             # Scan the local Docker image with Trivy for high and critical vulnerabilities
-            trivy_output=$(trivy image --severity CRITICAL --no-progress --format table test:latest)
+            trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format table test:latest)
             echo "$trivy_output"
             scan_result="${scan_result}\n\n${dockerfile} scan result:\n${trivy_output}"
+            
+            # Check if the scan found vulnerabilities
+            if echo "$trivy_output" | grep -q "CRITICAL"; then
+              scan_failed=true
+            fi
             
             # Clean up dangling images to free up space
             docker image prune -f
           done
           
           echo "::set-output name=scan_result::${scan_result}"
+          echo "::set-output name=scan_failed::${scan_failed}"
 
       # Step to post the scan result as a comment on the pull request
       - name: Post scan result as PR comment
@@ -75,12 +83,18 @@ jobs:
         with:
           script: |
             const scanResult = `{{ steps.build_and_scan.outputs.scan_result }}`;
-            const issue_number = context.payload.pull_request.number;
-            const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
-            await octokit.issues.createComment({
-              ...context.repo,
-              issue_number,
+            github.rest.issues.createComment({
+              issue_number: context.issue.number,
+              owner: context.repo.owner,
+              repo: context.repo.repo,
               body: `### Trivy Scan Results\n${scanResult}`
             });
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      # Final step to fail the job if vulnerabilities were found
+      - name: Fail if vulnerabilities were found
+        if: ${{ steps.build_and_scan.outputs.scan_failed == 'true' }}
+        run: |
+          echo "Vulnerabilities were found in the Docker images."
+          exit 1
