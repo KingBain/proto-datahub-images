@@ -35,7 +35,6 @@ jobs:
         run: |
           echo "Installing Trivy..."
           curl -sfL https://raw.githubusercontent.com/aquasecurity/trivy/main/contrib/install.sh | sh -s -- -b /usr/local/bin
-          mkdir -p trivy-results  # Create a directory to store Trivy results
 
       # Step to find and build updated Dockerfiles
       - name: Find and build updated Dockerfiles
@@ -70,8 +69,13 @@ jobs:
 
             # Scan the local Docker image with Trivy for high and critical vulnerabilities
             trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format table test:latest)
+            
+            echo "--"
+            echo "trivy_output"
             scan_result="${scan_result}\n\n${dockerfile} scan result:\n${trivy_output}"
-             echo "$scan_result"
+            echo "--"
+            echo "$scan_result"
+            echo "--""
 
             # Check if the scan found vulnerabilities
             if echo "$trivy_output" | grep -q "CRITICAL"; then
