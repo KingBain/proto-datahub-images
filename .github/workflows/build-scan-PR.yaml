@@ -75,7 +75,7 @@ jobs:
             scan_result="${scan_result}\n\n${dockerfile} scan result:\n${trivy_output}"
             echo "--"
             echo "$scan_result"
-            echo "--""
+            echo "--"
 
             # Check if the scan found vulnerabilities
             if echo "$trivy_output" | grep -q "CRITICAL"; then
