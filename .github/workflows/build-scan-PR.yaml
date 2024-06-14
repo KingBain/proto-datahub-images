@@ -75,7 +75,6 @@ jobs:
         with:
           script: |
             const scanResult = `{{ steps.build_and_scan.outputs.scan_result }}`;
-            const context = github.context;
             const issue_number = context.payload.pull_request.number;
             const octokit = github.getOctokit(process.env.GITHUB_TOKEN);
             await octokit.issues.createComment({
