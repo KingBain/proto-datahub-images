@@ -13,8 +13,6 @@ permissions:
   issues: write
   pull-requests: write
 
-
-
 jobs:
   build-and-scan:
     runs-on: ubuntu-latest
@@ -69,47 +67,20 @@ jobs:
 
             # Scan the local Docker image with Trivy for high and critical vulnerabilities
             trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format json test:latest)
-            
-            echo "--"
-            echo "$trivy_output"
-            scan_result="${scan_result}\n\n${dockerfile} scan result:\n${trivy_output}"
-            echo "--"
-            echo "$scan_result"
-            echo "--"
 
-            # Check if the scan found vulnerabilities
-            if echo "$trivy_output" | grep -q "CRITICAL"; then
-              scan_failed=true
+            # Check the Trivy output for CRITICAL vulnerabilities
+            critical_count=$(echo $trivy_output | jq '.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL") | length')
+
+            if [ "$critical_count" -gt 0 ]; then
+              echo "CRITICAL vulnerabilities found!"
+              echo "::set-output name=scan_result::CRITICAL vulnerabilities found."
+              echo "::set-output name=scan_failed::true"
+              exit 1
             fi
-            
-            # Clean up dangling images to free up space
-            docker image prune -f
+
+            # Append the scan result
+            scan_result="$scan_result\nDockerfile: $dockerfile\n$trivy_output"
           done
 
-          echo "scan_result=${trivy_output}" >> $GITHUB_OUTPUT
-          echo "::set-output name=scan_failed::${scan_failed}"
-
-      # Step to post the scan result as a comment on the pull request
-      - name: Post scan result as PR comment
-        uses: actions/github-script@v6     
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          SCAN_RESULT: ${{ steps.build_and_scan.outputs.scan_result }}
-        with:
-          script: |
-            const scanResult = process.env.SCAN_RESULT;
-            github.rest.issues.createComment({
-              issue_number: context.issue.number,
-              owner: context.repo.owner,
-              repo: context.repo.repo,
-              body: process.env.SCAN_RESULT
-            });
-
-
-
-      # Final step to fail the job if vulnerabilities were found
-      - name: Fail if vulnerabilities were found
-        if: ${{ steps.build_and_scan.outputs.scan_failed == 'true' }}
-        run: |
-          echo "Vulnerabilities were found in the Docker images."
-          exit 1
+          echo "::set-output name=scan_result::$scan_result"
+          echo "::set-output name=scan_failed::$scan_failed"
