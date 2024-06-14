@@ -80,8 +80,9 @@ jobs:
             fi
           done
 
-          echo "::set-output name=scan_result::$scan_result"
-          echo "::set-output name=scan_failed::$scan_failed"
+          echo "scan_result=$scan_result" >> $GITHUB_OUTPUT
+          echo "scan_failed=$scan_failed" >> $GITHUB_OUTPUT
+
 
       # Step to post a comment on the pull request with the scan results
       - name: Post scan results to PR
