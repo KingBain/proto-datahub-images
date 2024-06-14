@@ -69,6 +69,7 @@ jobs:
             trivy_output=$(trivy image --severity CRITICAL --exit-code 0 --no-progress --format json test:latest)
 
             # Check the Trivy output for CRITICAL vulnerabilities
+            echo $trivy_output
             critical_count=$(echo $trivy_output | jq '.Results[].Vulnerabilities[] | select(.Severity=="CRITICAL") | length')
 
             if [ "$critical_count" -gt 0 ]; then
