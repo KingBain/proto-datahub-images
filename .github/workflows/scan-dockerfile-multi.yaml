@@ -15,6 +15,16 @@ jobs:
     runs-on: ubuntu-20.04
 
     steps:
+    #Step 0 Send log to LAW
+    - name: "Post Message to Sentinel"
+      uses: cds-snc/sentinel-forward-data-action@main
+      with:
+        input_data: "Dockerfile Scan has begun "
+        log_type: "GHAction_CL"
+        log_analytics_workspace_id: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+        log_analytics_workspace_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
+
+
     # Step 1: Checkout the repository to the GitHub runner
     - name: Checkout repository
       uses: actions/checkout@v4
@@ -63,3 +73,12 @@ jobs:
       uses: github/codeql-action/upload-sarif@v2
       with:
         sarif_file: trivy-results/
+
+    #Step 6 Send log to LAW
+    - name: "Post Message to Sentinel"
+      uses: cds-snc/sentinel-forward-data-action@main
+      with:
+        input_data: "Dockerfile Scan has Ended "
+        log_type: "GHAction_CL"
+        log_analytics_workspace_id: ${{ secrets.LOG_ANALYTICS_WORKSPACE_ID }}
+        log_analytics_workspace_key: ${{ secrets.LOG_ANALYTICS_WORKSPACE_KEY }}
