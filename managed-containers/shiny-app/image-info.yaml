@@ -1,6 +1,6 @@
 ---
   image:
     name: ghcr.io/kingbain/shiny-app
-    digest: ghcr.io/kingbain/shiny-app@sha256:ff0aefa99b14b431037751e656ddc05e39d9efcb8a9a80631845d5b884146f2e
-    date: 2024-07-29T09:08:56Z
+    digest: ghcr.io/kingbain/shiny-app@sha256:cc61ca57ab528767be63403e02c065f7d748305b8d083522ad9416e0eac04ebc
+    date: 2024-08-05T09:10:19Z
     url: https://ghcr.io/KingBain/shiny-app:latest
