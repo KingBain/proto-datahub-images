@@ -1,6 +1,6 @@
 ---
   image:
     name: ghcr.io/kingbain/shiny-fsdh-app
-    digest: ghcr.io/kingbain/shiny-fsdh-app@sha256:b500b044a49624a9169a3b59be6598271ed6a9492c596309d4754b4eb3dfcd63
-    date: 2024-11-04T09:08:55Z
+    digest: ghcr.io/kingbain/shiny-fsdh-app@sha256:0f482bbb29228dcf343c02fd4cfe5015709c9eccc5ac6545a948705cd2c7a58d
+    date: 2024-11-11T09:08:31Z
     url: https://ghcr.io/KingBain/shiny-fsdh-app:latest
