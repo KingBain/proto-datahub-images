@@ -1,6 +1,6 @@
 ---
   image:
     name: ghcr.io/kingbain/trigger
-    digest: ghcr.io/kingbain/trigger@sha256:b391699096b32ee5fcd363260b0e3d263a595e7597d6b3a99a4371ed2810375c
-    date: 2024-11-11T09:08:57Z
+    digest: ghcr.io/kingbain/trigger@sha256:89864eea6c10a39cfe44db4a0668ac5715f821f1cdda7d30f793c7de4d6bb103
+    date: 2024-11-18T09:09:57Z
     url: https://ghcr.io/KingBain/trigger:latest
