@@ -1,6 +1,6 @@
 ---
   image:
     name: ghcr.io/kingbain/dbr-bioconda
-    digest: ghcr.io/kingbain/dbr-bioconda@sha256:6020bfffec5fdd96787fb8c21725b62d841160e0eaa0ea19297cfdc53aba25ae
-    date: 2025-02-17T09:12:07Z
+    digest: ghcr.io/kingbain/dbr-bioconda@sha256:2a9408b560d4b76c41596486996cd9562a6dcb5fd24858e58c27f419d9e17199
+    date: 2025-02-24T09:11:39Z
     url: https://ghcr.io/KingBain/dbr-bioconda:latest
